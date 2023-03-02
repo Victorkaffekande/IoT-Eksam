@@ -7,7 +7,10 @@
 
 #define DOUT  16
 #define CLK  17
+//Weight threshold
 #define THRESHOLD 0.1
+//10 seconds out of bed until warning
+#define TIMELIMIT 10
 
 String resident = "dennis";
 
@@ -82,11 +85,6 @@ void callback(char* topic, byte* message, unsigned int length) {
     }
   }
 
-  // Feel free to add more if statements to control more GPIOs with MQTT
-
-  // If a message is received on the topic esp32/output, you check if the message is either "on" or "off". 
-  // Changes the output state according to the message
-  
 }
 
 void reconnect() {
@@ -108,16 +106,32 @@ void reconnect() {
   }
 }
 
-void publishBedStatus(){
+void publishBedStatus(String status){
   uint64_t timerReading = timerReadSeconds(timer);
   String timerString = String(timerReading);
-  char* timerChars = (char*)timerString.c_str();
+  String message = String("{Time:"+timerString + "," + "Status:" + status + "}");
+  char* timerChars = (char*)message.c_str();
   client.publish("dennis/bedStatus", timerChars, 1);
   timerRestart(timer);
 }
 
-void listenForBedtime(){
+void ARDUINO_ISR_ATTR publishWarning(){
+  if(inBed == false && firstTimeInBed == false){
+    Serial.print("WARNING");
+    Serial.println();
+  }
+}
 
+void resetInterrupt(hw_timer_t * timer){
+  timerDetachInterrupt(timer);
+  timerAttachInterrupt(timer, &publishWarning, true);
+
+  // Set alarm to call onTimer function every second (value in microseconds).
+  // Repeat the alarm (third parameter)
+  timerAlarmWrite(timer, 10000000, false);
+
+  // Start an alarm
+  timerAlarmEnable(timer);
 }
 
 void loop() {
@@ -126,8 +140,7 @@ void loop() {
     float reading = scale.get_units();
     if(reading > THRESHOLD && inBed == false){
       if(firstTimeInBed == false){
-        publishBedStatus();
-      
+        publishBedStatus("Out of bed");
       }
       inBed = true;
       firstTimeInBed = false;
@@ -136,10 +149,12 @@ void loop() {
     }
     if(reading < THRESHOLD && inBed == true){
       inBed = false;
-      publishBedStatus();
+      publishBedStatus("In Bed");
       timer = timerBegin(0, 80, true);
+      resetInterrupt(timer);
       Serial.print("you're out of bed");
     }
+
     
 
 
