@@ -53,6 +53,7 @@ void reconnect() {
       Serial.println("connected");
       // Subscribe
       client.subscribe("warning/dennis");
+      client.subscribe("alert/dennis");
     } else {
       Serial.print("failed, rc=");
       Serial.print(client.state());
@@ -71,7 +72,10 @@ void callback(char* topic, byte* message, unsigned int length) {
   if(String(topic) == "warning/dennis"){
     digitalWrite(LED, HIGH);
   }
-
+  if(String(topic) == "alert/dennis"){
+    digitalWrite(LED, LOW);
+  }
+  
 }
 
 
