@@ -21,7 +21,7 @@ HX711 scale;
 //timer
 hw_timer_t * timer = NULL;
 
-bool active = false;
+bool active = true;
 bool inBed = false;
 bool firstTimeInBed = true;
 
@@ -81,6 +81,7 @@ void callback(char* topic, byte* message, unsigned int length) {
   Serial.println();
 
   Serial.print(messageTemp);
+
   if(String(topic) == "dennis/bedtime"){
     if(messageTemp == "activate"){
       active = true;
@@ -178,13 +179,13 @@ void loop() {
     if(warning){
       client.publish("warning/dennis", "", 1);
       warning = false;
+      alert = false;
       response = false;
-      //alertTimer = timerBegin(1, 80, true);
       resetInterrupt(timer, &alertFlag, 10);
     }
     if(alert && !response){
-      client.publish("alert/dennis", "", 1);
       alert = false;
+      client.publish("alert/dennis", "", 1);
     }
   }
   client.loop();
