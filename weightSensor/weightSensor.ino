@@ -24,6 +24,8 @@ bool active = true;
 bool inBed = false;
 bool firstTimeInBed = true;
 
+bool warning = false;
+
 
 void setup() {
   Serial.begin(9600);
@@ -115,8 +117,11 @@ void publishBedStatus(String status){
   timerRestart(timer);
 }
 
-void ARDUINO_ISR_ATTR publishWarning(){
-  if(inBed == false && firstTimeInBed == false){
+
+void ARDUINO_ISR_ATTR warningFlag(){
+    if(inBed == false && firstTimeInBed == false){
+    warning = true;
+    Serial.print(warning);
     Serial.print("WARNING");
     Serial.println();
   }
@@ -124,7 +129,7 @@ void ARDUINO_ISR_ATTR publishWarning(){
 
 void resetInterrupt(hw_timer_t * timer){
   timerDetachInterrupt(timer);
-  timerAttachInterrupt(timer, &publishWarning, true);
+  timerAttachInterrupt(timer, &warningFlag, true);
 
   // Set alarm to call onTimer function every second (value in microseconds).
   // Repeat the alarm (third parameter)
@@ -154,19 +159,10 @@ void loop() {
       resetInterrupt(timer);
       Serial.print("you're out of bed");
     }
-
-    
-
-
-  //uint64_t timerReading = timerReadSeconds(timer);
-  //String timerString = String(timerReading);
-  //Serial.print(timerString);
-  //Serial.println();
-  //Serial.print("Reading: ");
-  //Serial.print(reading, 3); //scale.get_units() returns a float
-  //Serial.print(" kg"); //You can change this to kg but you'll need to refactor the calibration_factor
-  //Serial.println();
+    if(warning){
+      client.publish("warning/dennis", "", 1);
+      warning = false;
+    }
   }
-  
   client.loop();
 }
