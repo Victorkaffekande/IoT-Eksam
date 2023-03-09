@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 # import context # Ensures paho is in PYTHONPATH
 import sqlite3
-
+from datetime import datetime, timedelta, time
+import time
 import paho.mqtt.client as mqtt
 from dbSetup import *
 
@@ -9,7 +10,7 @@ from dbSetup import *
 # This happens when connecting
 def on_connect(mqttc, obj, flags, rc):
     print("rc: " + str(rc))
-    #setup subs
+    # setup subs
     #
 
 
@@ -51,4 +52,22 @@ mqttc.on_subscribe = on_subscribe
 mqttc.username_pw_set(token, token)
 mqttc.connect(myhost, 1883)
 mqttc.subscribe("shop/#", 0)
-mqttc.loop_forever()
+
+
+goAgain = True
+
+start_time = datetime.now()
+while goAgain:
+    now = datetime.now()
+    if start_time.minute - now.minute >= 0:
+        print("asd")
+        start_time = datetime.now
+
+        time1 = datetime.now()
+        time5 = time1 + timedelta(minutes=5)
+        current_time = time1.strftime("%H:%M:%S")
+        list = checkAwake(current_time, time5)
+        for id in list:
+            print(id)
+            mqttc.publish("bedtime/" + str(id), "deactivate", 1)
+        time.sleep(3)

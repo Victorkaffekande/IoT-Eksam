@@ -56,7 +56,26 @@ def setupPeople(residents):
     db_conn.commit()
     db_conn.close()
 
-
+"""
 residents = [("Jimmy", 202, "07:00:00", "10:00:00"), ("Clara", 105, "07:00:00", "10:05:00"),
-             ("John", 109, "07:05:00", "09:15:00")]
+             ("John", 109, "13:20:00", "09:15:00")]
 setupPeople(residents)
+"""
+
+def checkAwake(now, future):
+    db_conn = sqlite3.connect("db.db")
+    sql = """
+        Select id 
+        FROM resident
+        where awake_time > ? and awake_time < ? 
+        """
+    cursor = db_conn.cursor()
+    arr = (now, future)
+    cursor.execute(sql, arr)
+    res = cursor.fetchall()
+    db_conn.close()
+    list = []
+    for x in res:
+        list += x
+    return list
+
