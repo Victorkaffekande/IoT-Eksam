@@ -1,0 +1,6 @@
+if active && inBed => start timer
+
+if active && !inBed && timer > timeLimitSec => Send warning
+
+if no warning response && wait_timer > 5min? => Send alarm
+
