@@ -20,9 +20,14 @@ HX711 scale;
 
 //timer
 hw_timer_t * timer = NULL;
+
 bool active = true;
 bool inBed = false;
 bool firstTimeInBed = true;
+
+bool alert = false;
+bool warning = false;
+bool response = false;
 
 
 void setup() {
@@ -76,6 +81,7 @@ void callback(char* topic, byte* message, unsigned int length) {
   Serial.println();
 
   Serial.print(messageTemp);
+
   if(String(topic) == "dennis/bedtime"){
     if(messageTemp == "activate"){
       active = true;
@@ -83,6 +89,9 @@ void callback(char* topic, byte* message, unsigned int length) {
     if(messageTemp == "deactivate"){
       active = false;
     }
+  }
+  if(String(topic) == "response/dennis"){
+    response = true;
   }
 
 }
@@ -95,7 +104,8 @@ void reconnect() {
     if (client.connect("WeightSensor", flespiToken, flespiToken)) {
       Serial.println("connected");
       //subscribe
-      client.subscribe("dennis/bedtime"); //TODO make dynamic
+      client.subscribe("dennis/bedtime");
+      client.subscribe("response/dennis"); //TODO make dynamic
     } else {
       Serial.print("failed, rc=");
       Serial.print(client.state());
@@ -115,23 +125,35 @@ void publishBedStatus(String status){
   timerRestart(timer);
 }
 
-void ARDUINO_ISR_ATTR publishWarning(){
+void resetInterrupt(hw_timer_t * timer, void (*fn)(), int lengthInSeconds){
+  double currentTime = timerReadSeconds(timer);
+  long lengthInMicroseconds = (lengthInSeconds + currentTime) * 1000000;
+
+  timerDetachInterrupt(timer);
+  timerAttachInterrupt(timer, &(*fn), true);
+
+  // Set alarm to call onTimer function every second (value in microseconds).
+  // Repeat the alarm (third parameter)
+  timerAlarmWrite(timer, lengthInMicroseconds, false);
+
+  // Start an alarm
+  timerAlarmEnable(timer);
+}
+
+void ARDUINO_ISR_ATTR warningFlag(){
   if(inBed == false && firstTimeInBed == false){
+    warning = true;
+    Serial.print(warning);
     Serial.print("WARNING");
     Serial.println();
   }
 }
 
-void resetInterrupt(hw_timer_t * timer){
-  timerDetachInterrupt(timer);
-  timerAttachInterrupt(timer, &publishWarning, true);
-
-  // Set alarm to call onTimer function every second (value in microseconds).
-  // Repeat the alarm (third parameter)
-  timerAlarmWrite(timer, 10000000, false);
-
-  // Start an alarm
-  timerAlarmEnable(timer);
+void ARDUINO_ISR_ATTR alertFlag(){
+  alert = true;
+  Serial.print(alert);
+  Serial.print("ALERT");
+  Serial.println();
 }
 
 void loop() {
@@ -151,22 +173,20 @@ void loop() {
       inBed = false;
       publishBedStatus("In Bed");
       timer = timerBegin(0, 80, true);
-      resetInterrupt(timer);
+      resetInterrupt(timer, &warningFlag, 10);
       Serial.print("you're out of bed");
     }
-
-    
-
-
-  //uint64_t timerReading = timerReadSeconds(timer);
-  //String timerString = String(timerReading);
-  //Serial.print(timerString);
-  //Serial.println();
-  //Serial.print("Reading: ");
-  //Serial.print(reading, 3); //scale.get_units() returns a float
-  //Serial.print(" kg"); //You can change this to kg but you'll need to refactor the calibration_factor
-  //Serial.println();
+    if(warning){
+      client.publish("warning/dennis", "", 1);
+      warning = false;
+      alert = false;
+      response = false;
+      resetInterrupt(timer, &alertFlag, 10);
+    }
+    if(alert && !response){
+      alert = false;
+      client.publish("alert/dennis", "", 1);
+    }
   }
-  
   client.loop();
 }
