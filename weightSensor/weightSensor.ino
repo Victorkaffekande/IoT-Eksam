@@ -12,7 +12,22 @@
 //10 seconds out of bed until warning
 #define TIMELIMIT 10
 
-String resident = "dennis";
+String residentID = "1";
+
+String bedtimeSubscribe = "bedtime/" + residentID;
+char* bedtimeAsCharArr = (char*)bedtimeSubscribe.c_str();
+
+String responseSubscribe = "response/" + residentID;
+char* responseAsCharArr = (char*)responseSubscribe.c_str();
+
+String bedStatusPublish = "bedStatus/" + residentID;
+char* bedStatusAsCharArr = (char*)bedStatusPublish.c_str();
+
+String warningPublish = "warning/" + residentID;
+char* warningeAsCharArr = (char*)warningPublish.c_str();
+
+String alertPublish = "alert/" + residentID;
+char* alertAsCharArr = (char*)alertPublish.c_str();
 
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -21,7 +36,7 @@ HX711 scale;
 //timer
 hw_timer_t * timer = NULL;
 
-bool active = true;
+bool active = false;
 bool inBed = false;
 bool firstTimeInBed = true;
 
@@ -82,15 +97,21 @@ void callback(char* topic, byte* message, unsigned int length) {
 
   Serial.print(messageTemp);
 
-  if(String(topic) == "dennis/bedtime"){
+  if(String(topic) == bedtimeAsCharArr){
     if(messageTemp == "activate"){
       active = true;
     }
     if(messageTemp == "deactivate"){
-      active = false;
+        active = false;
+        publishBedStatus("1");
+        firstTimeInBed = true;
+        inBed = false;
+        alert = false;
+        warning = false;
+        response = false;
     }
   }
-  if(String(topic) == "response/dennis"){
+  if(String(topic) == responseAsCharArr){
     response = true;
   }
 
@@ -104,8 +125,8 @@ void reconnect() {
     if (client.connect("WeightSensor", flespiToken, flespiToken)) {
       Serial.println("connected");
       //subscribe
-      client.subscribe("dennis/bedtime");
-      client.subscribe("response/dennis"); //TODO make dynamic
+      client.subscribe(bedtimeAsCharArr);
+      client.subscribe(responseAsCharArr); //TODO make dynamic
     } else {
       Serial.print("failed, rc=");
       Serial.print(client.state());
@@ -119,9 +140,9 @@ void reconnect() {
 void publishBedStatus(String status){
   uint64_t timerReading = timerReadSeconds(timer);
   String timerString = String(timerReading);
-  String message = String("{Time:"+timerString + "," + "Status:" + status + "}");
+  String message = String(timerString + "," + status);
   char* timerChars = (char*)message.c_str();
-  client.publish("dennis/bedStatus", timerChars, 1);
+  client.publish(bedStatusAsCharArr, timerChars, 0);
   timerRestart(timer);
 }
 
@@ -162,7 +183,7 @@ void loop() {
     float reading = scale.get_units();
     if(reading > THRESHOLD && inBed == false){
       if(firstTimeInBed == false){
-        publishBedStatus("Out of bed");
+        publishBedStatus("0");
       }
       inBed = true;
       firstTimeInBed = false;
@@ -171,13 +192,13 @@ void loop() {
     }
     if(reading < THRESHOLD && inBed == true){
       inBed = false;
-      publishBedStatus("In Bed");
+      publishBedStatus("1");
       timer = timerBegin(0, 80, true);
       resetInterrupt(timer, &warningFlag, 10);
       Serial.print("you're out of bed");
     }
     if(warning){
-      client.publish("warning/dennis", "", 1);
+      client.publish(warningeAsCharArr, "", 0);
       warning = false;
       alert = false;
       response = false;
@@ -185,7 +206,7 @@ void loop() {
     }
     if(alert && !response){
       alert = false;
-      client.publish("alert/dennis", "", 1);
+      client.publish(alertAsCharArr, "", 0);
     }
   }
   client.loop();

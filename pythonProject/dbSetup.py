@@ -1,4 +1,5 @@
 import sqlite3
+import json
 
 
 def createTables():
@@ -19,11 +20,11 @@ def createTables():
     sql = """
                 CREATE TABLE sensor (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                resident_id INTEGER,
-                created_at TIMESTAMP default CURRENT_TIMESTAMP NOT NULL,
+                resident_id INTEGER NOT NULL,
+                created_at DATE default (datetime('now', 'localtime')) NOT NULL,
                 in_bed bool NOT NULL,
                 duration int not null, 
-                FOREIGN KEY (resident_id) REFERENCES resident(id)
+                FOREIGN KEY (resident_id) REFERENCES resident (id)
                 )
                 """
     cursor = db_conn.cursor()
@@ -33,9 +34,10 @@ def createTables():
     sql = """
                     CREATE TABLE alert (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    resident_id INTEGER,
-                    created_at TIMESTAMP default CURRENT_TIMESTAMP NOT NULL,
-                    outcome bool not null,
+                    resident_id INTEGER NOT NULL,
+                    created_at DATE default (datetime('now', 'localtime')) NOT NULL,
+                    resolved_at DATE,
+                    outcome bool,
                     FOREIGN KEY (resident_id) REFERENCES resident(id)
                     )
                     """
@@ -63,21 +65,20 @@ setupPeople(residents)
 """
 
 def checkAwake(now, future):
-    db_conn = sqlite3.connect("db.db")
-    sql = """
-        Select id 
-        FROM resident
-        where awake_time >= ? and awake_time < ? 
-        """
-    cursor = db_conn.cursor()
-    arr = (now, future)
-    cursor.execute(sql, arr)
-    res = cursor.fetchall()
-    db_conn.close()
-    list = []
-    for x in res:
-        list += x
-    return list
+    with sqlite3.connect("db.db") as db_conn:
+        sql = """
+            Select id 
+            FROM resident
+            where awake_time >= ? and awake_time < ? 
+            """
+        cursor = db_conn.cursor()
+        arr = (now, future)
+        cursor.execute(sql, arr)
+        res = cursor.fetchall()
+        list = []
+        for x in res:
+            list += x
+        return list
 
 def checkBedtime(now, future):
     with sqlite3.connect("db.db") as db_conn:
@@ -94,3 +95,34 @@ def checkBedtime(now, future):
         for x in res:
             list += x
         return list
+
+def logSensorData(topic, payload):
+    parsed_data = parsePayload(topic, payload)
+    with sqlite3.connect("db.db") as db_conn:
+        sql = """
+            INSERT into sensor (resident_id, in_bed, duration)
+            VALUES (?,?,?)
+            """
+        cursor = db_conn.cursor()
+        cursor.execute(sql, parsed_data)
+        db_conn.commit()
+
+
+def logAlertData(topic):
+    resident_id = topic.split("/")[1]
+    with sqlite3.connect("db.db") as db_conn:
+        sql = """
+            INSERT into alert (resident_id)
+            VALUES (?)
+            """
+        cursor = db_conn.cursor()
+        cursor.execute(sql, resident_id)
+        db_conn.commit()
+
+
+def parsePayload(topic, payload):
+    resident_id = topic.split("/")[1]
+    splitPayload = payload.split(",")
+    in_bed = splitPayload[1]
+    duration = splitPayload[0]
+    return resident_id, in_bed, duration

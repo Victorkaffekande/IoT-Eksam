@@ -10,7 +10,6 @@ from dbSetup import *
 # This happens when connecting
 def on_connect(mqttc, obj, flags, rc):
     print("rc: " + str(rc))
-    mqttc.subscribe("test", 0)
     # setup subs
     #
 
@@ -20,7 +19,10 @@ def on_message(mqttc, obj, msg):
     print(msg.topic + " " + str(msg.qos) + " " + str(msg.payload))
     ##check the topic -> log in sensor or alarm table
     print("test had been received")
-    # TODO LOG DATA ON MESS
+    if "bedStatus/" in str(msg.topic):
+        logSensorData(str(msg.topic), str(msg.payload.decode("utf-8")))
+    if "alert/" in str(msg.topic):
+        logAlertData(str(msg.topic))
 
 
 # When something is published
@@ -54,6 +56,8 @@ mqttc.on_subscribe = on_subscribe
 # mqttc.on_log = on_log
 mqttc.username_pw_set(token, token)
 mqttc.connect(myhost, 1883)
+mqttc.subscribe("bedStatus/#")
+mqttc.subscribe("alert/#")
 mqttc.loop_start()
 
 
