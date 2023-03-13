@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # import context # Ensures paho is in PYTHONPATH
 import sqlite3
-from datetime import datetime, timedelta, time
+from datetime import datetime, timedelta
 import time
 import paho.mqtt.client as mqtt
 from dbSetup import *
@@ -10,6 +10,7 @@ from dbSetup import *
 # This happens when connecting
 def on_connect(mqttc, obj, flags, rc):
     print("rc: " + str(rc))
+    mqttc.subscribe("test", 0)
     # setup subs
     #
 
@@ -18,6 +19,8 @@ def on_connect(mqttc, obj, flags, rc):
 def on_message(mqttc, obj, msg):
     print(msg.topic + " " + str(msg.qos) + " " + str(msg.payload))
     ##check the topic -> log in sensor or alarm table
+    print("test had been received")
+    # TODO LOG DATA ON MESS
 
 
 # When something is published
@@ -51,23 +54,36 @@ mqttc.on_subscribe = on_subscribe
 # mqttc.on_log = on_log
 mqttc.username_pw_set(token, token)
 mqttc.connect(myhost, 1883)
-mqttc.subscribe("shop/#", 0)
+mqttc.loop_start()
+
+
+def sendWakeup(current_time, minutesLater):
+    list = checkAwake(current_time, minutesLater)
+    for id in list:
+        print(id)
+        mqttc.publish("bedtime/" + str(id), "deactivate", 1)
+
+
+def sendBedtime(current_time, minutesLater):
+    list = checkBedtime(current_time, minutesLater)
+    for id in list:
+        print(id)
+        mqttc.publish("bedtime/" + str(id), "activate", 1)
 
 
 goAgain = True
-
-start_time = datetime.now()
+minutes = 1
+start_time_min = datetime.now().minute
 while goAgain:
-    now = datetime.now()
-    if start_time.minute - now.minute >= 0:
-        print("asd")
-        start_time = datetime.now
+    current_time = datetime.now()
 
-        time1 = datetime.now()
-        time5 = time1 + timedelta(minutes=5)
-        current_time = time1.strftime("%H:%M:%S")
-        list = checkAwake(current_time, time5)
-        for id in list:
-            print(id)
-            mqttc.publish("bedtime/" + str(id), "deactivate", 1)
-        time.sleep(3)
+    if current_time.minute - start_time_min >= minutes:  # 0 for testing :)
+        start_time_min = datetime.now().minute
+        minutesLater = current_time + timedelta(minutes=minutes)
+
+        current_formatted = datetime.strftime(current_time, "%H:%M:%S")
+        later_formatted = datetime.strftime(minutesLater, "%H:%M:%S")
+        sendWakeup(current_formatted, later_formatted)
+        sendBedtime(current_formatted, later_formatted)
+
+    time.sleep(1)  # tiny delay

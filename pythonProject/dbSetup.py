@@ -67,7 +67,7 @@ def checkAwake(now, future):
     sql = """
         Select id 
         FROM resident
-        where awake_time > ? and awake_time < ? 
+        where awake_time >= ? and awake_time < ? 
         """
     cursor = db_conn.cursor()
     arr = (now, future)
@@ -79,3 +79,18 @@ def checkAwake(now, future):
         list += x
     return list
 
+def checkBedtime(now, future):
+    with sqlite3.connect("db.db") as db_conn:
+        sql = """
+            Select id 
+            FROM resident
+            where bed_time >= ? and bed_time < ? 
+            """
+        cursor = db_conn.cursor()
+        arr = (now, future)
+        cursor.execute(sql, arr)
+        res = cursor.fetchall()
+        list = []
+        for x in res:
+            list += x
+        return list
