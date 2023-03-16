@@ -108,17 +108,27 @@ def logSensorData(topic, payload):
         db_conn.commit()
 
 
-def logAlertData(topic):
-    resident_id = topic.split("/")[1]
+def logAlertData(id):
     with sqlite3.connect("db.db") as db_conn:
         sql = """
             INSERT into alert (resident_id)
             VALUES (?)
             """
         cursor = db_conn.cursor()
-        cursor.execute(sql, resident_id)
+        cursor.execute(sql, id)
         db_conn.commit()
 
+def getResidentInfo(id):
+    with sqlite3.connect("db.db") as db_conn:
+        sql = """
+                Select id, name, room_nr
+                FROM resident
+                where id = ? 
+                """
+        cursor = db_conn.cursor()
+        cursor.execute(sql, id)
+        result = cursor.fetchone()
+        return str(result)
 
 def parsePayload(topic, payload):
     resident_id = topic.split("/")[1]

@@ -22,7 +22,13 @@ def on_message(mqttc, obj, msg):
     if "bedStatus/" in str(msg.topic):
         logSensorData(str(msg.topic), str(msg.payload.decode("utf-8")))
     if "alert/" in str(msg.topic):
-        logAlertData(str(msg.topic))
+        resident_id = str(msg.topic).split("/")[1]
+        logAlertData(resident_id)
+        residentInfo = getResidentInfo(resident_id)\
+            .replace("(", "")\
+            .replace(")", "")\
+            .replace("'", "")
+        mqttc.publish("adminAlert", residentInfo, 0)
 
 
 # When something is published
@@ -65,14 +71,14 @@ def sendWakeup(current_time, minutesLater):
     list = checkAwake(current_time, minutesLater)
     for id in list:
         print(id)
-        mqttc.publish("bedtime/" + str(id), "deactivate", 1)
+        mqttc.publish("bedtime/" + str(id), "deactivate", 0)
 
 
 def sendBedtime(current_time, minutesLater):
     list = checkBedtime(current_time, minutesLater)
     for id in list:
         print(id)
-        mqttc.publish("bedtime/" + str(id), "activate", 1)
+        mqttc.publish("bedtime/" + str(id), "activate", 0)
 
 
 goAgain = True
