@@ -18,10 +18,8 @@ LiquidCrystal_I2C lcd(0x27, lcdColumns, lcdRows);
 WiFiClient espClient;
 PubSubClient client(espClient);
 
-char* alertSubscribe = "adminAlert";
+char alertSubscribe[] = "adminAlert";
 
-//set up alert queue
-QueueArray<char*> queue;
 
 
 void setup() {
@@ -37,7 +35,62 @@ void setup() {
 
   //initialize LCD
   lcd.init();     
+  Serial.print("init");
   lcd.backlight();
+}
+
+void loop() {
+  reconnect();
+
+
+  //displayQueue();
+ 
+  
+  
+  client.loop();
+} 
+
+void callback(char* topic, byte* message, unsigned int length) {
+  lcd.clear();
+  Serial.print("Message arrived on topic: ");
+  Serial.print(topic);
+  Serial.println();
+  String messageTemp;
+
+  for (int i = 0; i < length; i++) {
+    messageTemp += (char)message[i];
+  }
+
+  
+  lcd.print(messageTemp);
+  displayAlert(messageTemp);
+}
+
+String queueLength;
+char *token;
+const char s[2] = ",";
+void displayAlert(String msg){
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  Serial.println("full msg: " + msg);
+  int i1 = msg.indexOf(',');
+  int i2 = msg.indexOf(',', i1+1);
+  int i3 = msg.indexOf(',', i2+1);
+
+
+  String id = msg.substring(0, i1);
+  String info = msg.substring(i1 + 1, i2);
+  String room = msg.substring(i2 + 1, i3);
+  String queueLength = msg.substring(i3 + 1, msg.length());
+
+  Serial.println(id);
+  Serial.println(info);
+  Serial.println(room);
+  Serial.println(queueLength);
+
+  lcd.print(info+" "+room);
+  lcd.setCursor(0, 1);
+  lcd.print("Queue length: " + queueLength);
 }
 
 void setup_wifi() {
@@ -68,7 +121,7 @@ void reconnect() {
     if (client.connect("adminPanel", flespiToken, flespiToken)) {
       Serial.println("connected");
       // Subscribe
-      client.subscribe(alertSubscribe);
+      client.subscribe((char*)alertSubscribe);
     } else {
       Serial.print("failed, rc=");
       Serial.print(client.state());
@@ -78,25 +131,6 @@ void reconnect() {
     }
   }
 }
-
-void callback(char* topic, byte* message, unsigned int length) {
-  lcd.clear();
-  Serial.print("Message arrived on topic: ");
-  Serial.print(topic);
-  Serial.println();
-  String messageTemp;
-
-  for (int i = 0; i < length; i++) {
-    messageTemp += (char)message[i];
-  }
-
-  char* messageCharArr = (char*)messageTemp.c_str();
-  Serial.println(messageCharArr);
-  queue.enqueue(messageCharArr);
-  Serial.println(queue.front());
-  //displayQueue();
-}
-
 void scrollText(int row, String message, int delayTime, int lcdColumns) {
   for (int i=0; i < lcdColumns; i++) {
     message = " " + message;  
@@ -109,44 +143,7 @@ void scrollText(int row, String message, int delayTime, int lcdColumns) {
   }
 }
 
-void displayQueue(){
-  //lcd.clear();
-  if(queue.count() > 0){
-    digitalWrite(LED, HIGH);
-    lcd.setCursor(0, 0);
-    // print message
-    //Serial.println((char*)queue.front());
-    lcd.print(queue.front());
-    lcd.setCursor(0,1);
-    lcd.print(queue.count());
-  }
-  else{
-    digitalWrite(LED, LOW);
-    lcd.setCursor(0,0);
-    lcd.print("All is gucci");
-  }
-}
 
-void loop() {
-  reconnect();
 
-  //displayQueue();
-  if (queue.count() > 0){
-    lcd.setCursor(0,0);
-    queue.enqueue("lmao");
-    Serial.println(queue.dequeue());
-    char* a = queue.dequeue();
-    Serial.println("raw: ");
-    Serial.print(a);
-
-    Serial.println("as String: ");
-    Serial.print(String(a));
-
-    lcd.print(a);
-  }
-  
-  
-  client.loop();
-} 
   
 
