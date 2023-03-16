@@ -164,17 +164,11 @@ void resetInterrupt(hw_timer_t * timer, void (*fn)(), int lengthInSeconds){
 void ARDUINO_ISR_ATTR warningFlag(){
   if(inBed == false && firstTimeInBed == false){
     warning = true;
-    Serial.print(warning);
-    Serial.print("WARNING");
-    Serial.println();
   }
 }
 
 void ARDUINO_ISR_ATTR alertFlag(){
   alert = true;
-  Serial.print(alert);
-  Serial.print("ALERT");
-  Serial.println();
 }
 
 void loop() {
@@ -187,7 +181,6 @@ void loop() {
       }
       inBed = true;
       firstTimeInBed = false;
-      Serial.print("you're in bed");
       timer = timerBegin(0, 80, true);
     }
     if(reading < THRESHOLD && inBed == true){
@@ -195,7 +188,6 @@ void loop() {
       publishBedStatus("1");
       timer = timerBegin(0, 80, true);
       resetInterrupt(timer, &warningFlag, 10);
-      Serial.print("you're out of bed");
     }
     if(warning){
       client.publish(warningeAsCharArr, "", 0);
