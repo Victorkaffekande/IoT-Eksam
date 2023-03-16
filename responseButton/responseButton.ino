@@ -11,7 +11,16 @@ PubSubClient client(espClient);
 // btn Pin
 #define BTN 17
 
+String residentID = "1";
 
+String warningSubscribe = "warning/" + residentID;
+char* warningAsCharArr = (char*)warningSubscribe.c_str();
+
+String alertSubscribe = "alert/" + residentID;
+char* alertAsCharArr = (char*)alertSubscribe.c_str();
+
+String responseSubscribe = "response/" + residentID;
+char* responseAsCharArr = (char*)responseSubscribe.c_str();
 
 void setup() {
   
@@ -52,8 +61,9 @@ void reconnect() {
     if (client.connect("ESP8266Client", flespiToken, flespiToken)) {
       Serial.println("connected");
       // Subscribe
-      client.subscribe("warning/dennis");
-      client.subscribe("alert/dennis");
+      client.subscribe(responseAsCharArr);
+      client.subscribe(warningAsCharArr);
+      client.subscribe(alertAsCharArr);
     } else {
       Serial.print("failed, rc=");
       Serial.print(client.state());
@@ -69,15 +79,14 @@ void callback(char* topic, byte* message, unsigned int length) {
   Serial.print(topic);
   Serial.println();
 
-  if(String(topic) == "warning/dennis"){
+  if(String(topic) == warningAsCharArr){
     digitalWrite(LED, HIGH);
   }
-  if(String(topic) == "alert/dennis"){
+  if(String(topic) == alertAsCharArr || String(topic) == responseAsCharArr){
     digitalWrite(LED, LOW);
   }
   
 }
-
 
 void loop() {
   if (!client.connected()) {
@@ -86,7 +95,7 @@ void loop() {
   client.loop();
   if(digitalRead(LED) == HIGH){
     if(digitalRead(BTN) == LOW){
-      client.publish("response/dennis", "", 1);
+      client.publish(responseAsCharArr, "", 1);
       digitalWrite(LED, LOW);
     }
   }
