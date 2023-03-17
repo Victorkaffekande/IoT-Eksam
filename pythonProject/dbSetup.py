@@ -118,12 +118,14 @@ def logAlertData(id):
         cursor.execute(sql, id)
         db_conn.commit()
 
+
 def getResidentInfo(id):
     with sqlite3.connect("db.db") as db_conn:
         sql = """
-                Select id, name, room_nr
-                FROM resident
-                where id = ? 
+                Select resident.id, name, room_nr, alert.id
+                FROM resident inner join alert on resident.id = alert.resident_id
+                where resident.id = ?
+                order by alert.id desc 
                 """
         cursor = db_conn.cursor()
         cursor.execute(sql, id)

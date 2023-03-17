@@ -35,7 +35,6 @@ void setup() {
 
   //initialize LCD
   lcd.init();     
-  Serial.print("init");
   lcd.backlight();
 }
 
@@ -43,7 +42,7 @@ void loop() {
   reconnect();
 
 
-  //displayQueue();
+  displayQueue();
  
   
   
@@ -67,8 +66,7 @@ void callback(char* topic, byte* message, unsigned int length) {
 }
 
 String queueLength;
-char *token;
-const char s[2] = ",";
+
 void displayAlert(String msg){
   lcd.clear();
   lcd.setCursor(0, 0);
@@ -76,16 +74,19 @@ void displayAlert(String msg){
   int i1 = msg.indexOf(',');
   int i2 = msg.indexOf(',', i1+1);
   int i3 = msg.indexOf(',', i2+1);
+  int i4 = msg.indexOf(',', i3+1);
 
 
-  String id = msg.substring(0, i1);
+  String residentId = msg.substring(0, i1);
   String info = msg.substring(i1 + 1, i2);
   String room = msg.substring(i2 + 1, i3);
-  String queueLength = msg.substring(i3 + 1, msg.length());
+  String alertId = msg.substring(i3 + 1, i4);
+  String queueLength = msg.substring(i4 + 1, msg.length());
 
-  Serial.println(id);
+  Serial.println(residentId);
   Serial.println(info);
   Serial.println(room);
+  Serial.println(alertId);
   Serial.println(queueLength);
 
   lcd.print(info+" "+room);

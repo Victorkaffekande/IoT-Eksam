@@ -56,7 +56,7 @@ def on_log(mqttc, obj, level, string):
 # but note that the client id must be unique on the broker. Leaving the client
 # id parameter empty will generate a random id for you.
 myhost = "mqtt.flespi.io"
-token = "vAZp2ULyotIaqMf1Hfl6PzII58xcKoP5MCjEmU2BcBBsdEjKJvEmScTL9gNJsqC5"
+token = "kic4ynNM9v8XyZowFAotKSgqLq7PBSOJYQDn1gZYBXMXLYkgowyWdCaOQ7shN4QC"
 
 mqttc = mqtt.Client()
 mqttc.on_message = on_message

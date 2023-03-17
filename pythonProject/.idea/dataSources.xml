@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
-    <data-source source="LOCAL" name="db" uuid="a3b79283-367b-4dd8-b174-76e5dd1706d7">
+    <data-source source="LOCAL" name="db" uuid="c5e98fae-e2e3-4a46-8ee4-8f8a2e7b9ed2">
       <driver-ref>sqlite.xerial</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>org.sqlite.JDBC</jdbc-driver>
-      <jdbc-url>jdbc:sqlite:C:\Users\45535\Documents\GitHub\IoT-Eksam\pythonProject\db.db</jdbc-url>
+      <jdbc-url>jdbc:sqlite:C:\Users\victo\Documents\GitHub\IoT-Eksam\pythonProject\db.db</jdbc-url>
       <working-dir>$ProjectFileDir$</working-dir>
       <libraries>
         <library>
