@@ -7,6 +7,7 @@ import paho.mqtt.client as mqtt
 from dbSetup import *
 import queue
 
+waitingForResponse = False
 
 # This happens when connecting
 def on_connect(mqttc, obj, flags, rc):
@@ -31,9 +32,12 @@ def on_message(mqttc, obj, msg):
         print("res1: " + residentInfo)
         alertQueue.put(residentInfo)
     if "adminResponse" in str(msg.topic):
+        global waitingForResponse
         waitingForResponse = False
-        #TODO SEND ADMINRESPONSE ON BTN CLICK. UPDATE DB FUNCTION
-    # if "alertResonse/" -> update database, waitingforresonse = false
+        alertResponse = str(msg.payload.decode("utf-8"))
+        responseArr = alertResponse.split(",")
+        updateAlert(responseArr[1], responseArr[0])
+
 
 
 # When something is published
@@ -88,7 +92,7 @@ def sendBedtime(current_time, minutesLater):
 
 
 alertQueue = queue.Queue()
-waitingForResponse = False
+
 
 goAgain = True
 minutes = 1
@@ -110,7 +114,7 @@ while goAgain:
         waitingForResponse = True
         residentInfo = alertQueue.get()
         print("res2: " + residentInfo)
-        msgString = residentInfo.replace(" ", "")+","+str(alertQueue.qsize())
+        msgString = residentInfo.replace(" ", "")
         print(msgString)
         mqttc.publish("adminAlert", msgString, 0)
 

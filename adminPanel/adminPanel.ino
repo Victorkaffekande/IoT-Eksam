@@ -2,7 +2,6 @@
 #include <PubSubClient.h>
 #include "data/secretConfig.h"
 #include <LiquidCrystal_I2C.h>
-#include <QueueArray.h>
 
 // LED Pin
 #define LED 17
@@ -12,6 +11,9 @@
 
 int lcdColumns = 16;
 int lcdRows = 2;
+
+//Alert response id
+String alertId = "";
 
 LiquidCrystal_I2C lcd(0x27, lcdColumns, lcdRows); 
 
@@ -41,13 +43,26 @@ void setup() {
 void loop() {
   reconnect();
 
-
-  displayQueue();
- 
-  
+  if(alertId != ""){
+    sendResponse(RED_BTN, "0");
+    sendResponse(BLUE_BTN, "1");
+  }
   
   client.loop();
 } 
+
+void sendResponse(int btn, String value){
+  if(digitalRead(btn) == LOW){
+     String response = value + String(",") + alertId; 
+     char* responseChar = (char*)response.c_str(); 
+     alertId = "";
+     lcd.clear();
+     client.publish("adminResponse", responseChar, 0);
+     digitalWrite(LED, LOW);
+     delay(2000);
+  }
+}
+
 
 void callback(char* topic, byte* message, unsigned int length) {
   lcd.clear();
@@ -74,24 +89,22 @@ void displayAlert(String msg){
   int i1 = msg.indexOf(',');
   int i2 = msg.indexOf(',', i1+1);
   int i3 = msg.indexOf(',', i2+1);
-  int i4 = msg.indexOf(',', i3+1);
 
 
   String residentId = msg.substring(0, i1);
   String info = msg.substring(i1 + 1, i2);
   String room = msg.substring(i2 + 1, i3);
-  String alertId = msg.substring(i3 + 1, i4);
-  String queueLength = msg.substring(i4 + 1, msg.length());
+  alertId = msg.substring(i3 + 1, msg.length());
 
   Serial.println(residentId);
   Serial.println(info);
   Serial.println(room);
   Serial.println(alertId);
-  Serial.println(queueLength);
 
-  lcd.print(info+" "+room);
+  lcd.print(info);
   lcd.setCursor(0, 1);
-  lcd.print("Queue length: " + queueLength);
+  lcd.print("Room nr: " + room);
+  digitalWrite(LED, HIGH);
 }
 
 void setup_wifi() {

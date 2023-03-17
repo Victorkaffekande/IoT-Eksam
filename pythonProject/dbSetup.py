@@ -132,6 +132,16 @@ def getResidentInfo(id):
         result = cursor.fetchone()
         return str(result)
 
+def updateAlert(alertId, response):
+    with sqlite3.connect("db.db") as db_conn:
+        sql = """ 
+                 Update alert 
+                 set outcome = ?, resolved_at = datetime('now', 'localtime')
+                 where id = ?
+        """
+        cursor = db_conn.cursor()
+        cursor.execute(sql, [response, alertId])
+        db_conn.commit()
 def parsePayload(topic, payload):
     resident_id = topic.split("/")[1]
     splitPayload = payload.split(",")
