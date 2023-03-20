@@ -12,6 +12,9 @@
 //10 seconds out of bed until warning
 #define TIMELIMIT 10
 
+int timeUntilAlertInSeconds = 5;
+int timeUntilWarningInSeconds = 10;
+
 String residentID = "1";
 
 String bedtimeSubscribe = "bedtime/" + residentID;
@@ -182,23 +185,27 @@ void loop() {
       inBed = true;
       firstTimeInBed = false;
       timer = timerBegin(0, 80, true);
+      Serial.print("In bed");
     }
     if(reading < THRESHOLD && inBed == true){
       inBed = false;
       publishBedStatus("1");
       timer = timerBegin(0, 80, true);
-      resetInterrupt(timer, &warningFlag, 10);
+      resetInterrupt(timer, &warningFlag, timeUntilWarningInSeconds);
+      Serial.print("Out of Bed");
     }
     if(warning){
       client.publish(warningeAsCharArr, "", 0);
       warning = false;
       alert = false;
       response = false;
-      resetInterrupt(timer, &alertFlag, 10);
+      resetInterrupt(timer, &alertFlag, timeUntilAlertInSeconds);
+      Serial.print("Warning");
     }
     if(alert && !response){
       alert = false;
       client.publish(alertAsCharArr, "", 0);
+      Serial.print("Alert");
     }
   }
   client.loop();
