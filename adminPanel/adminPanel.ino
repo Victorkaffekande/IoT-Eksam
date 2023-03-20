@@ -75,12 +75,8 @@ void callback(char* topic, byte* message, unsigned int length) {
     messageTemp += (char)message[i];
   }
 
-  
-  lcd.print(messageTemp);
   displayAlert(messageTemp);
 }
-
-String queueLength;
 
 void displayAlert(String msg){
   lcd.clear();
