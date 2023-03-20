@@ -58,7 +58,7 @@ void reconnect() {
   while (!client.connected()) {
     Serial.print("Attempting MQTT connection...");
     // Attempt to connect
-    if (client.connect("ESP8266Client", flespiToken, flespiToken)) {
+    if (client.connect("responseBtn", flespiToken, flespiToken)) {
       Serial.println("connected");
       // Subscribe
       client.subscribe(responseAsCharArr);
