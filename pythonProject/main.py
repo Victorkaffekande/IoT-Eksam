@@ -4,16 +4,10 @@ from datetime import datetime, timedelta
 import time
 import paho.mqtt.client as mqtt
 from dbActions import *
+from config import *
 import queue
 
 waitingForResponse = False
-
-
-# This happens when connecting
-def on_connect(mqttc, obj, flags, rc):
-    print("rc: " + str(rc))
-    # setup subs
-    #
 
 
 # Getting a message from subscribe
@@ -36,18 +30,13 @@ def on_message(mqttc, obj, msg):
         updateAlert(responseArr[1], responseArr[0])
 
 
-
-
 # If you want to use a specific client id, use
 # mqttc = mqtt.Client("client-id")
 # but note that the client id must be unique on the broker. Leaving the client
 # id parameter empty will generate a random id for you.
-myhost = "mqtt.flespi.io"
-token = "kic4ynNM9v8XyZowFAotKSgqLq7PBSOJYQDn1gZYBXMXLYkgowyWdCaOQ7shN4QC"
 
 mqttc = mqtt.Client()
 mqttc.on_message = on_message
-mqttc.on_connect = on_connect
 # Uncomment to enable debug messages
 # mqttc.on_log = on_log
 mqttc.username_pw_set(token, token)
