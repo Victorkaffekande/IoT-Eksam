@@ -30,15 +30,8 @@ def on_message(mqttc, obj, msg):
         updateAlert(responseArr[1], responseArr[0])
 
 
-# If you want to use a specific client id, use
-# mqttc = mqtt.Client("client-id")
-# but note that the client id must be unique on the broker. Leaving the client
-# id parameter empty will generate a random id for you.
-
 mqttc = mqtt.Client()
 mqttc.on_message = on_message
-# Uncomment to enable debug messages
-# mqttc.on_log = on_log
 mqttc.username_pw_set(token, token)
 mqttc.connect(myhost, 1883)
 mqttc.subscribe("bedStatus/#")
