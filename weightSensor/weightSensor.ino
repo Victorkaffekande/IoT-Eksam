@@ -50,7 +50,6 @@ bool response = false;
 
 void setup() {
   Serial.begin(9600);
-  Serial.println("HX711 scale demo");
 
   //scale
   scale.begin(DOUT, CLK);
@@ -61,9 +60,6 @@ void setup() {
   setup_wifi();
   client.setServer(mqttHost, 1883);
   client.setCallback(callback);
-
-  Serial.println("Readings:");
-
 }
 
 void setup_wifi() {
@@ -98,8 +94,6 @@ void callback(char* topic, byte* message, unsigned int length) {
   }
   Serial.println();
 
-  Serial.print(messageTemp);
-
   if(String(topic) == bedtimeAsCharArr){
     if(messageTemp == "activate"){
       active = true;
@@ -117,7 +111,6 @@ void callback(char* topic, byte* message, unsigned int length) {
   if(String(topic) == responseAsCharArr){
     response = true;
   }
-
 }
 
 void reconnect() {
